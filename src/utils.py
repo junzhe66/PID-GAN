@@ -123,14 +123,14 @@ class EpisodeDirManager:
             to_remove.unlink()
         episode.save(self.episode_dir / f'episode_{episode_id}_epoch_{epoch}.pt')
 
-        ep_return = episode.compute_metrics().episode_return
-        if ep_return > self.best_return:
-            self.best_return = ep_return
-            path_best_ep = [p for p in self.episode_dir.iterdir() if p.stem.startswith('best_')]
-            assert len(path_best_ep) in (0, 1)
-            if len(path_best_ep) == 1:
-                path_best_ep[0].unlink()
-            episode.save(self.episode_dir / f'best_episode_{episode_id}_epoch_{epoch}.pt')
+        #ep_return = episode.compute_metrics().episode_return
+        # if ep_return > self.best_return:
+        #     self.best_return = ep_return
+        #     path_best_ep = [p for p in self.episode_dir.iterdir() if p.stem.startswith('best_')]
+        #     assert len(path_best_ep) in (0, 1)
+        #     if len(path_best_ep) == 1:
+        #         path_best_ep[0].unlink()
+        #     episode.save(self.episode_dir / f'best_episode_{episode_id}_epoch_{epoch}.pt')
 
 
 class RandomHeuristic:

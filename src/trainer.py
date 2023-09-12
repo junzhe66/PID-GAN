@@ -4,6 +4,7 @@ from pathlib import Path
 import shutil
 import sys
 import time
+import math
 from typing import Any, Dict, Optional, Tuple
 
 import hydra
@@ -39,6 +40,8 @@ class Trainer:
         self.cfg = cfg
         self.start_epoch = 1
         self.device = torch.device(cfg.common.device)
+        self.batch_size=1
+        
 
         self.ckpt_dir = Path('checkpoints')
         self.media_dir = Path('media')
@@ -68,8 +71,8 @@ class Trainer:
 
         if self.cfg.training.should:
             train_env = create_env(cfg.env.train, cfg.collection.train.num_envs)
-            # self.train_dataset = instantiate(cfg.datasets.train)
-            self.train_collector = Collector()
+            self.train_dataset = instantiate(cfg.datasets.train)
+            self.train_collector = Collector(train_env, self.train_dataset, episode_manager_train, obs_time=7, pred_time=9, time_interval=30)
 
         if self.cfg.evaluation.should:
             test_env = create_env(cfg.env.test, cfg.collection.test.num_envs)
@@ -98,6 +101,7 @@ class Trainer:
             self.load_checkpoint()
 
     def run(self) -> None:
+        i=0
 
         for epoch in range(self.start_epoch, 1 + self.cfg.common.epochs):
 
@@ -106,10 +110,18 @@ class Trainer:
             to_log = []
 
             if self.cfg.training.should:
-                if epoch <= self.cfg.collection.train.stop_after_epochs:
-                    training_data=self.train_collector.collect_training_data()
+                
+                if epoch <= 3:
+                    batch=0
+                    training_data, length =self.train_collector.collect_training_data()
+                    nb_batches_per_epoch= math.ceil(length/self.batch_size)
+
+
+                    for batch in range(nb_batches_per_epoch+1): 
+                        training_batch, index =self.train_collector.get_next_batch(epoch, self.batch_size, i, training_data)
+                        i=index
                     #to_log += self.train_collector.collect_training_data()
-                to_log += self.train_agent(epoch)
+                        to_log = self.train_agent(batch)
 
     #         if self.cfg.evaluation.should and (epoch % self.cfg.evaluation.every == 0):
     #             self.test_dataset.clear()
@@ -119,63 +131,63 @@ class Trainer:
     #         if self.cfg.training.should:
     #             self.save_checkpoint(epoch, save_agent_only=not self.cfg.common.do_checkpoint)
 
-    #         to_log.append({'duration': (time.time() - start_time) / 3600})
-    #         for metrics in to_log:
-    #             wandb.log({'epoch': epoch, **metrics})
+            to_log.append({'duration': (time.time() - start_time) / 3600})
+            for metrics in to_log:
+                wandb.log({'epoch': epoch, **metrics})
 
-    #     self.finish()
+        self.finish()
 
-    # def train_agent(self, epoch: int) -> None:
-    #     self.agent.train()
-    #     self.agent.zero_grad()
+    def train_agent(self, epoch: int) -> None:
+        self.agent.train()
+        self.agent.zero_grad()
 
-    #     metrics_tokenizer, metrics_world_model, metrics_actor_critic = {}, {}, {}
+        metrics_tokenizer, metrics_world_model, metrics_actor_critic = {}, {}, {}
 
-    #     cfg_tokenizer = self.cfg.training.tokenizer
-    #     cfg_world_model = self.cfg.training.world_model
-    #     cfg_actor_critic = self.cfg.training.actor_critic
+        cfg_tokenizer = self.cfg.training.tokenizer
+        cfg_world_model = self.cfg.training.world_model
+        cfg_actor_critic = self.cfg.training.actor_critic
 
-    #     w = self.cfg.training.sampling_weights
+        w = self.cfg.training.sampling_weights
 
-    #     if epoch > cfg_tokenizer.start_after_epochs:
-    #         metrics_tokenizer = self.train_component(self.agent.tokenizer, self.optimizer_tokenizer, sequence_length=1, sample_from_start=True, sampling_weights=w, **cfg_tokenizer)
-    #     self.agent.tokenizer.eval()
+        # if epoch > 0:
+        #     metrics_tokenizer = self.train_component(self.agent.tokenizer, self.optimizer_tokenizer, sequence_length=1, sample_from_start=False, sampling_weights=w, **cfg_tokenizer)
+        #self.agent.tokenizer.eval()
 
-    #     if epoch > cfg_world_model.start_after_epochs:
-    #         metrics_world_model = self.train_component(self.agent.world_model, self.optimizer_world_model, sequence_length=self.cfg.common.sequence_length, sample_from_start=True, sampling_weights=w, tokenizer=self.agent.tokenizer, **cfg_world_model)
-    #     self.agent.world_model.eval()
+        if epoch > 0:
+            metrics_world_model = self.train_component(self.agent.world_model, self.optimizer_world_model, sequence_length=16, sample_from_start=True, sampling_weights=w, tokenizer=self.agent.tokenizer, **cfg_world_model)
+        # self.agent.world_model.eval()
 
-    #     if epoch > cfg_actor_critic.start_after_epochs:
-    #         metrics_actor_critic = self.train_component(self.agent.actor_critic, self.optimizer_actor_critic, sequence_length=1 + self.cfg.training.actor_critic.burn_in, sample_from_start=False, sampling_weights=w, tokenizer=self.agent.tokenizer, world_model=self.agent.world_model, **cfg_actor_critic)
-    #     self.agent.actor_critic.eval()
+        # if epoch > cfg_actor_critic.start_after_epochs:
+        #     metrics_actor_critic = self.train_component(self.agent.actor_critic, self.optimizer_actor_critic, sequence_length=1 + self.cfg.training.actor_critic.burn_in, sample_from_start=False, sampling_weights=w, tokenizer=self.agent.tokenizer, world_model=self.agent.world_model, **cfg_actor_critic)
+        # self.agent.actor_critic.eval()
 
-    #     return [{'epoch': epoch, **metrics_tokenizer, **metrics_world_model, **metrics_actor_critic}]
+        return [{'epoch': epoch, **metrics_tokenizer, **metrics_world_model}]
 
-    # def train_component(self, component: nn.Module, optimizer: torch.optim.Optimizer, steps_per_epoch: int, batch_num_samples: int, grad_acc_steps: int, max_grad_norm: Optional[float], sequence_length: int, sampling_weights: Optional[Tuple[float]], sample_from_start: bool, **kwargs_loss: Any) -> Dict[str, float]:
-    #     loss_total_epoch = 0.0
-    #     intermediate_losses = defaultdict(float)
+    def train_component(self, component: nn.Module, optimizer: torch.optim.Optimizer, steps_per_epoch: int, batch_num_samples: int, grad_acc_steps: int, max_grad_norm: Optional[float], sequence_length: int, sampling_weights: Optional[Tuple[float]], sample_from_start: bool, **kwargs_loss: Any) -> Dict[str, float]:
+        loss_total_epoch = 0.0
+        intermediate_losses = defaultdict(float)
 
-    #     for _ in tqdm(range(steps_per_epoch), desc=f"Training {str(component)}", file=sys.stdout):
-    #         optimizer.zero_grad()
-    #         for _ in range(grad_acc_steps):
-    #             batch = self.train_dataset.sample_batch(batch_num_samples, sequence_length, sampling_weights, sample_from_start)
-    #             batch = self._to_device(batch)
+        for _ in tqdm(range(steps_per_epoch), desc=f"Training {str(component)}", file=sys.stdout):
+            optimizer.zero_grad()
+            for _ in range(grad_acc_steps):
+                batch = self.train_dataset.sample_batch(batch_num_samples, sequence_length, sampling_weights, sample_from_start)
+                batch = self._to_device(batch)
 
-    #             losses = component.compute_loss(batch, **kwargs_loss) / grad_acc_steps
-    #             loss_total_step = losses.loss_total
-    #             loss_total_step.backward()
-    #             loss_total_epoch += loss_total_step.item() / steps_per_epoch
+                losses = component.compute_loss(batch, **kwargs_loss) / grad_acc_steps
+                loss_total_step = losses.loss_total
+                loss_total_step.backward()
+                loss_total_epoch += loss_total_step.item() / steps_per_epoch
 
-    #             for loss_name, loss_value in losses.intermediate_losses.items():
-    #                 intermediate_losses[f"{str(component)}/train/{loss_name}"] += loss_value / steps_per_epoch
+                for loss_name, loss_value in losses.intermediate_losses.items():
+                    intermediate_losses[f"{str(component)}/train/{loss_name}"] += loss_value / steps_per_epoch
 
-    #         if max_grad_norm is not None:
-    #             torch.nn.utils.clip_grad_norm_(component.parameters(), max_grad_norm)
+            if max_grad_norm is not None:
+                torch.nn.utils.clip_grad_norm_(component.parameters(), max_grad_norm)
 
-    #         optimizer.step()
+            optimizer.step()
 
-    #     metrics = {f'{str(component)}/train/total_loss': loss_total_epoch, **intermediate_losses}
-    #     return metrics
+        metrics = {f'{str(component)}/train/total_loss': loss_total_epoch, **intermediate_losses}
+        return metrics
 
     # @torch.no_grad()
     # def eval_agent(self, epoch: int) -> None:
