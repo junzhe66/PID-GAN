@@ -60,7 +60,7 @@ class EpisodesDataset:
         self.num_seen_episodes += 1
         self.newly_modified_episodes.add(episode_id)
         return episode_id
-
+    
     def sample_batch(self, batch_num_samples: int, sequence_length: int, weights: Optional[Tuple[float]] = None, sample_from_start: bool = True) -> Batch:
         return self._collate_episodes_segments(self._sample_episodes_segments(batch_num_samples, sequence_length, weights, sample_from_start))
 
@@ -94,8 +94,9 @@ class EpisodesDataset:
         batch = {}
         for k in episodes_segments[0]:
             batch[k] = torch.stack([e_s[k] for e_s in episodes_segments])
-        batch['observations'] = batch['observations'].float() / 255.0  # int8 to float and scale
+        batch['observations'] = batch['observations'].float()  # int8 to float and scale
         return batch
+
 
     def traverse(self, batch_num_samples: int, chunk_size: int):
         for episode in self.episodes:

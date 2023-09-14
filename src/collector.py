@@ -107,23 +107,25 @@ class Collector:
         return loaders, len(dataset_train), len(dataset_test), len(dataset_vali)
     
     def collect_training_data(self):
-        loaders, length_train, length_test, length_val = self.collect_data()
+        loaders, length_train, _ , _ = self.collect_data()
         loaders_train = loaders['train']
-        length = length_train
-        # training_samples=[]
-        # loaders=self.collect_data()
-        # num_samples=1
-        # for i, images in enumerate(loaders['train']):
-        #     if num_samples >= 50: 
-        #          break 
-            
-        #     image = images.view(1,16,256,256)
-        #     #image= image.squeeze(-1)
-        #     self.training_data.append(image)
-        #     num_samples=num_samples+1
-        #     length= len(self.training_data)
+        length = length_train 
 
         return loaders_train, length
+    
+    def collect_testing_data(self):
+        loaders, _ , length_test, _ = self.collect_data()
+        loaders_test = loaders['test']
+        length = length_test 
+        return loaders_test, length
+    
+    def collect_validation_data(self):
+        loaders, _ , _ , length_validation = self.collect_data()
+        loaders_validation = loaders['valid']
+        length = length_validation
+        return loaders_validation, length
+    
+    
             
     def get_next_batch(self,epoch, batch_size, start_index, training_data):
         self.training_data= training_data
@@ -136,7 +138,7 @@ class Collector:
         for i, images in enumerate(training_data, start= start_index):
             if i >= end_index:
                 break
-            image = images.view(1,self.length,256,256)
+            image = images.view(self.length,1,256,256)
             # image= image.unsqueeze(-1)
             training_batch.append(image)
 
