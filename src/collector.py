@@ -12,15 +12,10 @@ from agent import Agent
 from dataset import EpisodesDataset
 from envs import SingleProcessEnv, MultiProcessEnv
 from episode import Episode
-from utils import EpisodeDirManager, RandomHeuristic
-
-from agent import Agent
-from dataset import EpisodesDataset
-from envs import SingleProcessEnv, MultiProcessEnv
-from episode import Episode
 from utils import EpisodeDirManager
-
 from PIL import Image
+import torch.nn.functional as F
+
 import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
 from torch.cuda.amp import autocast
@@ -134,11 +129,11 @@ class Collector:
         end_index= start_index + batch_size
         self.epoch= epoch
         training_batch=[]
-
+        
         for i, images in enumerate(training_data, start= start_index):
             if i >= end_index:
                 break
-            image = images.view(self.length,1,256,256)
+            image = images.view(self.length,1,128,128)
             # image= image.unsqueeze(-1)
             training_batch.append(image)
 
@@ -146,15 +141,17 @@ class Collector:
         
         current_index = end_index
         self.episode_ids = [None] * self.env.num_envs
-        self.process_and_add_episodes(batch, current_index, epoch)
+        self.process_and_add_episodes(batch, batch_size, epoch, len(training_data))
             
         return batch, current_index 
 
-    def process_and_add_episodes(self, batch, index, epoch):
+    def process_and_add_episodes(self, batch, batch_size, epoch, length):
         # Assuming you have the logic to process episodes here
         # Extract observations, actions, rewards, dones, etc.
+        batch_size = batch_size
+        length_data = length 
         if self.batch_counter_10 < 10:
-            episode_tensor = torch.cat(batch, dim=0)
+            episode_tensor = torch.cat(batch, dim=1)
             # for o in observations:
             #o = torch.tensor(batch)
             episode = Episode(
@@ -174,6 +171,9 @@ class Collector:
                 
                 # Increment the batch_counter for the whole batches
             self.batch_counter += 1
+            if self.batch_counter == (length_data/batch_size): 
+                self.batch_counter=0
+            
 
 
 # Correct
@@ -211,9 +211,20 @@ class radarDataset(Dataset):
             image = image/40
             #image = 2*image-1 #normalize to [-1,1]
             output.append(image)
-        output = torch.permute(torch.tensor(np.array(output)), (1, 2, 0))
+        output = torch.tensor((np.array(output)), dtype = torch.float32)
+ # Reshape tensor to include a batch dimension (B, C, H, W)
+        output = output.unsqueeze(0)
+        # Resize tensor using F.interpolate
+        output = F.interpolate(output, size=(128, 128), mode='bilinear', align_corners=False)
+        # Remove batch dimension
+        output = torch.squeeze(output, 0)
+        # Permute and transform
+        output = torch.permute(output, (1, 2, 0))
         output = self.transform(np.array(output))
         return output
+       
+       
+        
 
 def eventGeneration(start_time, obs_time ,lead_time, time_interval):
 # Generate event based on starting time point, return a list: [[t-4,...,t-1,t], [t+1,...,t+72]]

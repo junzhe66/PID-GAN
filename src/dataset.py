@@ -61,32 +61,20 @@ class EpisodesDataset:
         self.newly_modified_episodes.add(episode_id)
         return episode_id
     
-    def sample_batch(self, batch_num_samples: int, sequence_length: int, weights: Optional[Tuple[float]] = None, sample_from_start: bool = True) -> Batch:
+    def batch_buffer(self, batch_num_samples: int, sequence_length: int, weights: Optional[Tuple[float]] = None, sample_from_start: bool = True) -> Batch:
         return self._collate_episodes_segments(self._sample_episodes_segments(batch_num_samples, sequence_length, weights, sample_from_start))
 
     def _sample_episodes_segments(self, batch_num_samples: int, sequence_length: int, weights: Optional[Tuple[float]], sample_from_start: bool) -> List[Episode]:
-        num_episodes = len(self.episodes)
+        sampled_episodes= self.episodes[-1]
         num_weights = len(weights) if weights is not None else 0
 
-        if num_weights < num_episodes:
-            weights = [1] * num_episodes
-        else:
-            assert all([0 <= x <= 1 for x in weights]) and sum(weights) == 1
-            sizes = [num_episodes // num_weights + (num_episodes % num_weights) * (i == num_weights - 1) for i in range(num_weights)]
-            weights = [w / s for (w, s) in zip(weights, sizes) for _ in range(s)]
-
-        sampled_episodes = random.choices(self.episodes, k=batch_num_samples, weights=weights)
-
         sampled_episodes_segments = []
-        for sampled_episode in sampled_episodes:
+        for _ in range(1):
             if sample_from_start:
-                start = random.randint(0, len(sampled_episode) - 1)
-                stop = start + sequence_length
-            else:
-                stop = random.randint(1, len(sampled_episode))
-                start = stop - sequence_length
-            sampled_episodes_segments.append(sampled_episode.segment(start, stop, should_pad=True))
-            assert len(sampled_episodes_segments[-1]) == sequence_length
+                start = 0
+                stop =  sequence_length 
+            sampled_episodes_segments.append(sampled_episodes)
+            #assert len(sampled_episodes_segments[1]) == sequence_length
         return sampled_episodes_segments
 
     def _collate_episodes_segments(self, episodes_segments: List[Episode]) -> Batch:

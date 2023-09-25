@@ -89,11 +89,16 @@ class WorldModel(nn.Module):
     def compute_loss(self, batch: Batch, tokenizer: Tokenizer, **kwargs: Any) -> LossWithIntermediateLosses:
         
         with torch.no_grad():
-            observations= rearrange(batch['observations'], 'b t c h w  -> (b t) c h w')
+            observations= rearrange(batch, 'c t b h w  -> (b t) c h w')
             obs_tokens = tokenizer.encode(observations).tokens  # (BL, K)
-        obs_tokens=obs_tokens.unsqueeze(0)
+            shape_obs = batch.size()
+            shape_token= obs_tokens.size()
+
+        b = shape_obs[2]
+        l = shape_obs[1]
+        k = shape_token[1]
         #print("tokens_obs",obs_tokens.size())
-        tokens = rearrange(obs_tokens, 'b l k1 -> b (l k1)')  # (B, L(K))
+        tokens = obs_tokens.view(b, l*k) # (B, L(K))
         #print(tokens.dtype)
         #print("reshape.tokens",tokens.size())
         outputs = self.forward(tokens)
