@@ -131,7 +131,7 @@ class EpisodesDatasetRamMonitoring(EpisodesDataset):
         else:
             assert max_ram_usage.endswith('G')
             m = float(max_ram_usage.split('G')[0])
-            self.check_ram_usage = lambda: psutil.Process().memory_info()[0] / 2 ** 30 > m
+            self.check_ram_usage = lambda: psutil.Process().memory_info()[0] / 2 ** 50 > m
 
     def clear(self) -> None:
         super().clear()

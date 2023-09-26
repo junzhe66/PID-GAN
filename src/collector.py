@@ -55,70 +55,88 @@ class Collector:
 
 
 
-    def collect_data(self): 
-        root_dir = '/home/hbi/RAD_NL25_RAP_5min/' 
-    
+    # def collect_data(self): 
+        # root_dir = '/home/hbi/RAD_NL25_RAP_5min/' 
+    # 
 
-        df_train = pd.read_csv('/space/zboucher/World_Model/catchment/training_Delfland08-14_20.csv', header=None)
-        event_times = df_train[0].to_list()
-        dataset_train = radarDataset(root_dir, event_times, self.obs_time, self.pred_time, self.time_interval, transform=Compose([ToTensor()]))
+        # df_train = pd.read_csv('/space/zboucher/World_Model/catchment/training_Delfland08-14_20.csv', header=None)
+        # event_times = df_train[0].to_list()
+        # dataset_train = radarDataset(root_dir, event_times, self.obs_time, self.pred_time, self.time_interval, transform=Compose([ToTensor()]))
 
-        df_train_s = pd.read_csv('/space/zboucher/World_Model/catchment/training_Delfland08-14.csv', header=None)
-        event_times = df_train_s[0].to_list()
-        dataset_train_del = radarDataset(root_dir, event_times, self.obs_time, self.pred_time, self.time_interval, transform=Compose([ToTensor()]))
+        # df_train_s = pd.read_csv('/space/zboucher/World_Model/catchment/training_Delfland08-14.csv', header=None)
+        # event_times = df_train_s[0].to_list()
+        # dataset_train_del = radarDataset(root_dir, event_times, self.obs_time, self.pred_time, self.time_interval, transform=Compose([ToTensor()]))
 
-        df_test = pd.read_csv('/space/zboucher/World_Model/catchment/testing_Delfland18-20.csv', header=None)
-        event_times = df_test[0].to_list()
-        dataset_test = radarDataset(root_dir, event_times,self.obs_time, self.pred_time, self.time_interval, transform=Compose([ToTensor()]))
+        # df_test = pd.read_csv('/space/zboucher/World_Model/catchment/testing_Delfland18-20.csv', header=None)
+        # event_times = df_test[0].to_list()
+        # dataset_test = radarDataset(root_dir, event_times,self.obs_time, self.pred_time, self.time_interval, transform=Compose([ToTensor()]))
 
-        df_vali = pd.read_csv('/space/zboucher/World_Model/catchment/validation_Delfland15-17.csv', header=None)
-        event_times = df_vali[0].to_list()
-        dataset_vali = radarDataset(root_dir, event_times, self.obs_time, self.pred_time, self.time_interval, transform=Compose([ToTensor()]))
+        # df_vali = pd.read_csv('/space/zboucher/World_Model/catchment/validation_Delfland15-17.csv', header=None)
+        # event_times = df_vali[0].to_list()
+        # dataset_vali = radarDataset(root_dir, event_times, self.obs_time, self.pred_time, self.time_interval, transform=Compose([ToTensor()]))
 
-        df_train_aa = pd.read_csv('/space/zboucher/World_Model/catchment/training_Aa08-14.csv', header=None)
-        event_times = df_train_aa[0].to_list()
-        dataset_train_aa = radarDataset(root_dir, event_times,self.obs_time, self.pred_time, self.time_interval, transform=Compose([ToTensor()]))
+        # df_train_aa = pd.read_csv('/space/zboucher/World_Model/catchment/training_Aa08-14.csv', header=None)
+        # event_times = df_train_aa[0].to_list()
+        # dataset_train_aa = radarDataset(root_dir, event_times,self.obs_time, self.pred_time, self.time_interval, transform=Compose([ToTensor()]))
 
-        df_train_dw = pd.read_csv('/space/zboucher/World_Model/catchment/training_Dwar08-14.csv', header=None)
-        event_times = df_train_dw[0].to_list()
-        dataset_train_dw = radarDataset(root_dir, event_times, self.obs_time, self.pred_time, self.time_interval, transform=Compose([ToTensor()]))
+        # df_train_dw = pd.read_csv('/space/zboucher/World_Model/catchment/training_Dwar08-14.csv', header=None)
+        # event_times = df_train_dw[0].to_list()
+        # dataset_train_dw = radarDataset(root_dir, event_times, self.obs_time, self.pred_time, self.time_interval, transform=Compose([ToTensor()]))
 
-        df_train_re = pd.read_csv('/space/zboucher/World_Model/catchment/training_Regge08-14.csv', header=None)
-        event_times = df_train_re[0].to_list()
-        dataset_train_re = radarDataset(root_dir, event_times, self.obs_time, self.pred_time, self.time_interval, transform=Compose([ToTensor()]))
+        # df_train_re = pd.read_csv('/space/zboucher/World_Model/catchment/training_Regge08-14.csv', header=None)
+        # event_times = df_train_re[0].to_list()
+        # dataset_train_re = radarDataset(root_dir, event_times, self.obs_time, self.pred_time, self.time_interval, transform=Compose([ToTensor()]))
 
-        data_list = [dataset_train_aa, dataset_train_dw, dataset_train_del, dataset_train_re]
-        train_aadedwre = torch.utils.data.ConcatDataset(data_list)
+        # data_list = [dataset_train_aa, dataset_train_dw, dataset_train_del, dataset_train_re]
+        # train_aadedwre = torch.utils.data.ConcatDataset(data_list)
 
-        print(len(dataset_train), len(dataset_test), len(dataset_vali))
-        loaders = {'train': DataLoader(train_aadedwre, batch_size=1, shuffle=True, num_workers=8),
-                    'test': DataLoader(dataset_test, batch_size=1, shuffle=False, num_workers=8),
-                    'valid': DataLoader(dataset_vali, batch_size=1, shuffle=False, num_workers=8),
+        # print(len(dataset_train), len(dataset_test), len(dataset_vali))
+        # loaders = {'train': DataLoader(train_aadedwre, batch_size=1, shuffle=True, num_workers=8),
+                    # 'test': DataLoader(dataset_test, batch_size=1, shuffle=False, num_workers=8),
+                    # 'valid': DataLoader(dataset_vali, batch_size=1, shuffle=False, num_workers=8),
 
-                    'train_aa5': DataLoader(dataset_train_aa, batch_size=1, shuffle=False, num_workers=8),
-                    'train_dw5': DataLoader(dataset_train_dw, batch_size=1, shuffle=False, num_workers=8),
-                    'train_del5': DataLoader(dataset_train_del, batch_size=1, shuffle=True, num_workers=8),
-                    'train_re5': DataLoader(dataset_train_re, batch_size=1, shuffle=False, num_workers=8),}
-        return loaders, len(dataset_train), len(dataset_test), len(dataset_vali)
-    
+                    # 'train_aa5': DataLoader(dataset_train_aa, batch_size=1, shuffle=False, num_workers=8),
+                    # 'train_dw5': DataLoader(dataset_train_dw, batch_size=1, shuffle=False, num_workers=8),
+                    # 'train_del5': DataLoader(dataset_train_del, batch_size=1, shuffle=True, num_workers=8),
+                    # 'train_re5': DataLoader(dataset_train_re, batch_size=1, shuffle=False, num_workers=8),}
+        # return loaders, len(dataset_train), len(dataset_test), len(dataset_vali)
+
+    class CustomDataset(Dataset):
+        def __init__(self, file_path):
+            self.data = torch.tensor(np.load(file_path), dtype=torch.float32)
+        
+        def __len__(self):
+            return len(self.data)
+        
+        def __getitem__(self, index):
+            sample = self.data[index]
+            return sample
+        
     def collect_training_data(self):
-        loaders, length_train, _ , _ = self.collect_data()
-        loaders_train = loaders['train']
-        length = length_train 
+        # Paths to your numpy array files
+        train_file_path = '/space/zboucher/Data/all_data_train.npy'
+        train_dataset = self.CustomDataset(train_file_path)
+        loaders_train = DataLoader(train_dataset, batch_size=1, shuffle=True)
+        length= len(train_dataset)
 
         return loaders_train, length
     
     def collect_testing_data(self):
-        loaders, _ , length_test, _ = self.collect_data()
-        loaders_test = loaders['test']
-        length = length_test 
-        return loaders_test, length
+        # Paths to your numpy array files
+        test_file_path = '/space/zboucher/Data/all_data_test.npy'
+        test_dataset = self.CustomDataset(test_file_path)
+        test_loader = DataLoader(test_dataset, batch_size=1, shuffle=False)
+        length=len(test_dataset)
+
+        return test_loader, length
     
     def collect_validation_data(self):
-        loaders, _ , _ , length_validation = self.collect_data()
-        loaders_validation = loaders['valid']
-        length = length_validation
-        return loaders_validation, length
+        vali_file_path = '/space/ankushroy/Data/all_data_vali.npy'
+
+        vali_dataset = self.CustomDataset(vali_file_path)
+        vali_loader = DataLoader(vali_dataset, batch_size=1, shuffle=False)
+        length= len(vali_dataset)
+        return vali_loader, length
     
     
             
@@ -161,16 +179,16 @@ class Collector:
                 self.episode_ids[self.batch_counter_10] = self.dataset.add_episode(episode)
                 self.episode_dir_manager.save(episode, self.batch_counter, epoch)
                 
-            # else:
-            #     self.dataset.update_episode(self.episode_ids[index], episode)
-            #            self.first_10_batch_counter += 1
+            else:
+                self.dataset.update_episode(self.episode_ids[index], episode)
+                self.first_10_batch_counter += 1
         
         # Reset the first_10_batch_counter to 0 if it exceeds 10
             if self.batch_counter_10>= 10:
                 self.batch_counter_10= 0
                 
                 # Increment the batch_counter for the whole batches
-            self.batch_counter += 1
+            self.batch_counter_10 += 1
             if self.batch_counter == (length_data/batch_size): 
                 self.batch_counter=0
             

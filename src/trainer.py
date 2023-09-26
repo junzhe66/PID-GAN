@@ -159,11 +159,13 @@ class Trainer:
         if cfg_tokenizer.start_after_epochs <= epoch <= cfg_tokenizer.stop_after_epochs:
             data_index=0
             loss_total_epoch = 0.0
+            intermediate_losses = defaultdict(float)
             for _ in tqdm(range(nb_train_batches_per_epoch + 1), desc=f"Training {str(self.agent.tokenizer)}", file=sys.stdout):
                 _, index =self.train_collector.get_next_batch(epoch, self.batch_size, data_index, training_data)
                 data_index =index
-                metrics_tokenizer, loss = self.train_component(self.agent.tokenizer, self.optimizer_tokenizer,loss_total_epoch, sequence_length=self.cfg.common.sequence_length, sample_from_start=True, sampling_weights=w, **cfg_tokenizer) 
+                metrics_tokenizer, loss, intermediate_los = self.train_component(self.agent.tokenizer, self.optimizer_tokenizer,loss_total_epoch, intermediate_losses, sequence_length=self.cfg.common.sequence_length, sample_from_start=True, sampling_weights=w, **cfg_tokenizer) 
                 loss_total_epoch = loss 
+                intermediate_losses = intermediate_los
         self.agent.tokenizer.eval()
 
         if cfg_world_model.start_after_epochs <= epoch <= cfg_world_model.stop_after_epochs:
@@ -185,41 +187,46 @@ class Trainer:
 
         return [{'epoch': epoch, **metrics_tokenizer, **metrics_world_model}]
 
-    def train_component(self, component: nn.Module, optimizer: torch.optim.Optimizer, loss_total_epoch, batch_num_samples: int, grad_acc_steps: int, max_grad_norm: Optional[float], sequence_length: int, sampling_weights: Optional[Tuple[float]], sample_from_start: bool, **kwargs_loss: Any) -> Dict[str, float]:
+    def train_component(self, component: nn.Module, optimizer: torch.optim.Optimizer, loss_total_epoch, intermediate_losses,  batch_num_samples: int, grad_acc_steps: int, sequence_length: int, sampling_weights: Optional[Tuple[float]], sample_from_start: bool, **kwargs_loss: Any) -> Dict[str, float]:
         
-        intermediate_losses = defaultdict(float)
+        #intermediate_losses = defaultdict(float)
 
         # for batch in tqdm(range(nb_batches_per_epoch+1), desc=f"Training {str(component)}", file=sys.stdout):
         optimizer.zero_grad()
             #batch, index_updated = self.train_collector.get_next_batch(epoch, batch_size, index, training_data)
         batch = self.train_dataset.batch_buffer(batch_num_samples, sequence_length, sampling_weights, sample_from_start)
         batch = self._to_device(batch)
-        for j in range(grad_acc_steps): 
-            batch_training= batch['observations'][:,:,(j*batch_num_samples):(j+1)*(batch_num_samples),:,:]
-            losses = component.compute_loss(batch_training, **kwargs_loss) / grad_acc_steps
-            loss_total_step = losses.loss_total
-            loss_total_step.backward()
-            loss_total_epoch += loss_total_step.item() 
+        mini_batch= math.ceil(self.batch_size /(batch_num_samples*grad_acc_steps))
+        counter=0
+        for _ in range(mini_batch):
+            for _ in range(grad_acc_steps): 
+                batch_training= batch['observations'][:,:,(counter*batch_num_samples):(counter+1)*(batch_num_samples),:,:]
+                losses = component.compute_loss(batch_training, **kwargs_loss) / grad_acc_steps
+                loss_total_step = losses.loss_total
+                loss_total_step.backward()
+                loss_total_epoch += loss_total_step.item() 
 
-            for loss_name, loss_value in losses.intermediate_losses.items():
-                intermediate_losses[f"{str(component)}/train/{loss_name}"] += loss_value
+                for loss_name, loss_value in losses.intermediate_losses.items():
+                    intermediate_losses[f"{str(component)}/train/{loss_name}"] += loss_value
+                
+                counter= counter + 1
 
 
-            # batch = self._to_device(batch)
-            # losses = component.compute_loss(batch, **kwargs_loss)/grad_acc_steps
-            # loss_total_step = losses.loss_total
-            # (loss_total_step/batch_num_samples).backward()
-            # loss_total_epoch += (loss_total_step).item()/batch_num_samples
-            # index= index_updated
-            
+                # batch = self._to_device(batch)
+                # losses = component.compute_loss(batch, **kwargs_loss)/grad_acc_steps
+                # loss_total_step = losses.loss_total
+                # (loss_total_step/batch_num_samples).backward()
+                # loss_total_epoch += (loss_total_step).item()/batch_num_samples
+                # index= index_updated
+                
 
-            # for loss_name, loss_value in losses.intermediate_losses.items():
-                # intermediate_losses[f"{str(component)}/train/{loss_name}"] += (loss_value/batch_num_samples) 
+                # for loss_name, loss_value in losses.intermediate_losses.items():
+                    # intermediate_losses[f"{str(component)}/train/{loss_name}"] += (loss_value/batch_num_samples) 
 
-            # if max_grad_norm is not None:
-                # torch.nn.utils.clip_grad_norm_(component.parameters(), max_grad_norm)
+                # if max_grad_norm is not None:
+                    # torch.nn.utils.clip_grad_norm_(component.parameters(), max_grad_norm)
 
-        optimizer.step()
+            optimizer.step()
 
          
         metrics = {f'{str(component)}/train/total_loss': loss_total_epoch, **intermediate_losses}
@@ -228,7 +235,7 @@ class Trainer:
         print("loss_total_epoch", loss_total_epoch)
 
         #batch = self._out_device(batch)
-        return metrics, loss_total_epoch
+        return metrics, loss_total_epoch, intermediate_losses
 
     @torch.no_grad()
     def eval_agent(self, epoch: int, nb_test_batches_per_epoch, testing_data) -> None:

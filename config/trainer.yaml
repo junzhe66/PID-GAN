@@ -2,12 +2,12 @@ defaults:
   - _self_
   - tokenizer: default
   - world_model: default
-  - actor_critic: default
+  # actor_critic: default
   - env: default
   - datasets: default
 
 wandb:
-  mode: disabled 
+  mode: disabled # online 
   project: iris
   entity: null
   name: null
@@ -22,66 +22,72 @@ initialization:
   load_actor_critic: False
 
 common:
-  epochs: 600
+  epochs: 200
   device: cuda:1
+  batch_size: 64
   do_checkpoint: True
   seed: 0
+  obs_time: 7 
+  pred_time: 9 
+  time_interval: 30
   sequence_length: ${world_model.max_blocks}
   resume: False # set by resume.sh script only.
 
 collection:
   train:
     num_envs: 1
-    stop_after_epochs: 500
-    num_episodes_to_save: 10
+    stop_after_epochs: 200 ###### this should be 100 
+    num_episodes_to_save: 4
     config:
       epsilon: 0.01
       should_sample: True
       temperature: 1.0
       num_steps: 200
-      burn_in: ${training.actor_critic.burn_in}
+    # burn_in: ${training.actor_critic.burn_in}
   test:
-    num_envs: 8
+    num_envs: 1 # was 8 
     num_episodes_to_save: ${collection.train.num_episodes_to_save}
     config:
       epsilon: 0.0
       should_sample: True
       temperature: 0.5
-      num_episodes: 16
-      burn_in: ${training.actor_critic.burn_in}
+      num_episodes: 10
+    #  burn_in: ${training.actor_critic.burn_in}
 
 training:
   should: True
   learning_rate: 0.0001
   sampling_weights: [0.25, 0.25, 0.25, 0.25]
   tokenizer:
-    batch_num_samples: 1 # batch_size
-    grad_acc_steps: 1
+    batch_num_samples: 4 # batch_size
+    grad_acc_steps: 4
     max_grad_norm: 10.0
-    start_after_epochs: 5 #was 5
-    steps_per_epoch: 200
+    start_after_epochs: 0 #was 5
+    stop_after_epochs: 100
+  #  steps_per_epoch: 200
   world_model:
-    batch_num_samples: 1 # batch_size
-    grad_acc_steps: 1
+    batch_num_samples: 4 # batch_size
+    grad_acc_steps: 4
     max_grad_norm: 10.0
     weight_decay: 0.01
-    start_after_epochs: 5 # was 25
-    steps_per_epoch: 200
-  actor_critic:
-    batch_num_samples: 64
-    grad_acc_steps: 1
-    max_grad_norm: 10.0
-    start_after_epochs: 50
-    steps_per_epoch: 200
-    imagine_horizon: ${common.sequence_length}
-    burn_in: 20
-    gamma: 0.995
-    lambda_: 0.95
-    entropy_weight: 0.001
+    start_after_epochs: 100 # was 25
+    stop_after_epochs: 200
+  #  steps_per_epoch: 200
+  # actor_critic:
+    # batch_num_samples: 64
+    # grad_acc_steps: 1
+    # max_grad_norm: 10.0
+    # start_after_epochs: 50
+    # steps_per_epoch: 200
+    # imagine_horizon: ${common.sequence_length}
+    # burn_in: 20
+    # gamma: 0.995
+    # lambda_: 0.95
+    # entropy_weight: 0.001
 
 evaluation:
   should: True
-  every: 1
+  every: 10
   tokenizer:
     batch_num_samples: ${training.tokenizer.batch_num_samples}
     start_after_epochs: ${training.tokenizer.start_after_epochs}
@@ -89,7 +95,7 @@ evaluation:
   world_model:
     batch_num_samples: ${training.world_model.batch_num_samples}
     start_after_epochs: ${training.world_model.start_after_epochs}
-  actor_critic:
-    num_episodes_to_save: ${training.actor_critic.batch_num_samples}
-    horizon: ${training.actor_critic.imagine_horizon}
-    start_after_epochs: ${training.actor_critic.start_after_epochs}
+  # actor_critic:
+    # num_episodes_to_save: ${training.actor_critic.batch_num_samples}
+    # horizon: ${training.actor_critic.imagine_horizon}
+    # start_after_epochs: ${training.actor_critic.start_after_epochs}

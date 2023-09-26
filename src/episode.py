@@ -13,7 +13,7 @@ class EpisodeMetrics:
 
 @dataclass
 class Episode:
-    observations: torch.FloatTensor
+    observations: torch.ByteTensor
     # observations: torch.ByteTensor
     # actions: torch.LongTensor
     # rewards: torch.FloatTensor
