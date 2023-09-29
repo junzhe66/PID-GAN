@@ -1,6 +1,6 @@
 train:
   _target_: dataset.EpisodesDatasetRamMonitoring
-  max_ram_usage: 30G
+  max_ram_usage: 50G
   name: train_dataset
 test:
   _target_: dataset.EpisodesDataset

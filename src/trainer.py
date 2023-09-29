@@ -171,11 +171,13 @@ class Trainer:
         if cfg_world_model.start_after_epochs <= epoch <= cfg_world_model.stop_after_epochs:
             data_index=0
             loss_total_epoch = 0.0
+            intermediate_losses = defaultdict(float)
             for _ in tqdm(range(nb_train_batches_per_epoch + 1), desc=f"Training {str(self.agent.world_model)}", file=sys.stdout): 
                 _, index =self.train_collector.get_next_batch(epoch, self.batch_size, data_index, training_data)
                 data_index =index
-                metrics_world_model, loss = self.train_component(self.agent.world_model, self.optimizer_world_model, loss_total_epoch, sequence_length=self.cfg.common.sequence_length, sample_from_start=True, sampling_weights=w, tokenizer=self.agent.tokenizer, **cfg_world_model)
+                metrics_world_model, loss, intermediate_los = self.train_component(self.agent.world_model, self.optimizer_world_model, loss_total_epoch, sequence_length=self.cfg.common.sequence_length, sample_from_start=True, sampling_weights=w, tokenizer=self.agent.tokenizer, **cfg_world_model)
                 loss_total_epoch = loss 
+                intermediate_losses = intermediate_los
             #loss_total_epoch = loss/ (nb_train_batches_per_epoch +1)
             #_, index =self.train_collector.get_next_batch(epoch, self.batch_size, data_index, training_data)
             #metrics_world_model, loss = self.train_component(self.agent.world_model, self.optimizer_world_model, loss_total_epoch, sequence_length=self.cfg.common.sequence_length, sample_from_start=True, sampling_weights=w, tokenizer=self.agent.tokenizer, **cfg_world_model)

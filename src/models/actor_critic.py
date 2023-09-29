@@ -101,24 +101,24 @@ class ActorCritic(nn.Module):
         assert not self.use_original_obs
         outputs = self.imagine(batch, tokenizer, world_model, horizon=imagine_horizon)
 
-        with torch.no_grad():
-            lambda_returns = compute_lambda_returns(
-                rewards=outputs.rewards,
-                values=outputs.values,
-                ends=outputs.ends,
-                gamma=gamma,
-                lambda_=lambda_,
-            )[:, :-1]
+        # with torch.no_grad():
+            # lambda_returns = compute_lambda_returns(
+                # rewards=outputs.rewards,
+                # values=outputs.values,
+                # ends=outputs.ends,
+                # gamma=gamma,
+                # lambda_=lambda_,
+            # )[:, :-1]
 
-        values = outputs.values[:, :-1]
+        # values = outputs.values[:, :-1]
 
-        d = Categorical(logits=outputs.logits_actions[:, :-1])
-        log_probs = d.log_prob(outputs.actions[:, :-1])
-        loss_actions = -1 * (log_probs * (lambda_returns - values.detach())).mean()
-        loss_entropy = - entropy_weight * d.entropy().mean()
-        loss_values = F.mse_loss(values, lambda_returns)
-
-        return LossWithIntermediateLosses(loss_actions=loss_actions, loss_values=loss_values, loss_entropy=loss_entropy)
+        # d = Categorical(logits=outputs.logits_actions[:, :-1])
+        # log_probs = d.log_prob(outputs.actions[:, :-1])
+        # loss_actions = -1 * (log_probs * (lambda_returns - values.detach())).mean()
+        # loss_entropy = - entropy_weight * d.entropy().mean()
+        # loss_values = F.mse_loss(values, lambda_returns)
+# 
+        # return LossWithIntermediateLosses(viper_loss, reconstruction_loss)
 
     def imagine(self, batch: Batch, tokenizer: Tokenizer, world_model: WorldModel, horizon: int, show_pbar: bool = False) -> ImagineOutput:
         assert not self.use_original_obs

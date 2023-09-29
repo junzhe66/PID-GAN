@@ -179,16 +179,16 @@ class Collector:
                 self.episode_ids[self.batch_counter_10] = self.dataset.add_episode(episode)
                 self.episode_dir_manager.save(episode, self.batch_counter, epoch)
                 
-            else:
-                self.dataset.update_episode(self.episode_ids[index], episode)
-                self.first_10_batch_counter += 1
+            # else:
+                # self.dataset.update_episode(self.episode_ids[index], episode)
+                # self.first_10_batch_counter += 1
         
         # Reset the first_10_batch_counter to 0 if it exceeds 10
             if self.batch_counter_10>= 10:
                 self.batch_counter_10= 0
                 
                 # Increment the batch_counter for the whole batches
-            self.batch_counter_10 += 1
+            self.batch_counter += 1
             if self.batch_counter == (length_data/batch_size): 
                 self.batch_counter=0
             

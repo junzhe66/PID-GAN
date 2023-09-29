@@ -7,7 +7,7 @@ defaults:
   - datasets: default
 
 wandb:
-  mode: disabled # online 
+  mode: online #disabled 
   project: iris
   entity: null
   name: null
@@ -23,7 +23,7 @@ initialization:
 
 common:
   epochs: 200
-  device: cuda:1
+  device: cuda:0
   batch_size: 64
   do_checkpoint: True
   seed: 0
@@ -37,7 +37,7 @@ collection:
   train:
     num_envs: 1
     stop_after_epochs: 200 ###### this should be 100 
-    num_episodes_to_save: 4
+    num_episodes_to_save: 10
     config:
       epsilon: 0.01
       should_sample: True
@@ -45,7 +45,7 @@ collection:
       num_steps: 200
     # burn_in: ${training.actor_critic.burn_in}
   test:
-    num_envs: 1 # was 8 
+    num_envs: 8 # was 8 
     num_episodes_to_save: ${collection.train.num_episodes_to_save}
     config:
       epsilon: 0.0

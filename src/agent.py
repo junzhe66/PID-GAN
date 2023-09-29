@@ -17,12 +17,12 @@ class Agent(nn.Module):
         self.world_model = world_model
         # self.actor_critic = actor_critic
 
-    @property
+    #@property
     # def device(self):
     #     return self.actor_critic.conv1.weight.device
 
     def load(self, path_to_checkpoint: Path, device: torch.device, load_tokenizer: bool = True, load_world_model: bool = True) -> None: 
-        agent_state_dict = torch.load(path_to_checkpoint, map_location=device)
+        agent_state_dict = torch.load(path_to_checkpoint, device)
         if load_tokenizer:
             self.tokenizer.load_state_dict(extract_state_dict(agent_state_dict, 'tokenizer'))
         if load_world_model:
