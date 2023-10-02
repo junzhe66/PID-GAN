@@ -21,10 +21,10 @@ def make_reconstructions_from_batch(batch, save_dir, epoch, tokenizer):
     
     os.makedirs(save_dir, exist_ok=True)
 
-    for i in range(1):
-        original_frame = original_frames[15,0,:,:]
+    for i in range(5):
+        original_frame = original_frames[i,0,:,:]
         a_display = tensor_to_np_frames(original_frame)
-        rec_frame = rec_frames[15,0,:,:]
+        rec_frame = rec_frames[i,0,:,:]
         ar_display = tensor_to_np_frames(rec_frame)
 
         # Plot the precipitation fields using your plot_precip_field function

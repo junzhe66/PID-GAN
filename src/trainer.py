@@ -38,7 +38,7 @@ class Trainer:
             set_seed(cfg.common.seed)
 
         self.cfg = cfg
-        self.start_epoch = 1
+        self.start_epoch = 5
         self.device = torch.device(cfg.common.device)
         self.batch_size=cfg.common.batch_size
         self.obs_time = cfg.common.obs_time 
@@ -156,7 +156,7 @@ class Trainer:
         
 
 
-        if cfg_tokenizer.start_after_epochs <= epoch <= cfg_tokenizer.stop_after_epochs:
+        if epoch >= cfg_tokenizer.start_after_epochs:
             data_index=0
             loss_total_epoch = 0.0
             intermediate_losses = defaultdict(float)
@@ -168,7 +168,7 @@ class Trainer:
                 intermediate_losses = intermediate_los
         self.agent.tokenizer.eval()
 
-        if cfg_world_model.start_after_epochs <= epoch <= cfg_world_model.stop_after_epochs:
+        if epoch >= cfg_world_model.start_after_epochs:
             data_index=0
             loss_total_epoch = 0.0
             intermediate_losses = defaultdict(float)
@@ -252,11 +252,13 @@ class Trainer:
         if epoch > cfg_tokenizer.start_after_epochs:
             test_data_index=0
             loss_total_test_epoch = 0.0
+            intermediate_losses = defaultdict(float)
             for _ in tqdm(range(nb_test_batches_per_epoch + 1), desc=f"Evaluating {str(self.agent.tokenizer)}", file=sys.stdout):
                 _, index =self.test_collector.get_next_batch(epoch, self.batch_size, test_data_index, testing_data)
                 test_data_index =index
-                metrics_tokenizer, loss_test = self.eval_component(self.agent.tokenizer, cfg_tokenizer.batch_num_samples, loss_total_test_epoch, sequence_length=self.cfg.common.sequence_length)
+                metrics_tokenizer, loss_test, intermediate_los  = self.eval_component(self.agent.tokenizer, cfg_tokenizer.batch_num_samples, loss_total_test_epoch, intermediate_losses, sequence_length=self.cfg.common.sequence_length)
                 loss_total_test_epoch = loss_test 
+                intermediate_losses = intermediate_los
             # loss_total_test_epoch = loss_test/ (nb_test_batches_per_epoch + 1)
             # _, index =self.test_collector.get_next_batch(epoch, self.batch_size, test_data_index, testing_data)
             # metrics_tokenizer, loss_test = self.eval_component(self.agent.tokenizer, cfg_tokenizer.batch_num_samples, loss_total_test_epoch, sequence_length=self.cfg.common.sequence_length)
@@ -265,14 +267,16 @@ class Trainer:
         if epoch > cfg_world_model.start_after_epochs:
             test_data_index=0
             loss_total_test_epoch = 0.0
+            intermediate_losses = defaultdict(float)
             for _ in tqdm(range(nb_test_batches_per_epoch + 1), desc=f"Evaluating {str(self.agent.world_model)}", file=sys.stdout):
                 _, index =self.test_collector.get_next_batch(epoch, self.batch_size, test_data_index, testing_data)
                 test_data_index =index
-                metrics_world_model, loss_test= self.eval_component(self.agent.world_model, cfg_world_model.batch_num_samples, loss_total_test_epoch, sequence_length=self.cfg.common.sequence_length, tokenizer=self.agent.tokenizer)
+                metrics_world_model, loss_test, intermediate_los = self.eval_component(self.agent.world_model, cfg_world_model.batch_num_samples, loss_total_test_epoch, intermediate_losses, sequence_length=self.cfg.common.sequence_length, tokenizer=self.agent.tokenizer)
                 loss_total_test_epoch = loss_test 
-            # loss_total_test_epoch = loss_test/ (nb_test_batches_per_epoch +1)
-            # _, index =self.test_collector.get_next_batch(epoch, self.batch_size, test_data_index, testing_data)
-            # metrics_world_model, loss_test= self.eval_component(self.agent.world_model, cfg_world_model.batch_num_samples, loss_total_test_epoch, sequence_length=self.cfg.common.sequence_length, tokenizer=self.agent.tokenizer)
+                intermediate_losses = intermediate_los
+           
+           
+           
 
 
         if cfg_tokenizer.save_reconstructions:
@@ -282,8 +286,8 @@ class Trainer:
         return [metrics_tokenizer, metrics_world_model]
 
     @torch.no_grad()
-    def eval_component(self, component: nn.Module, batch_num_samples: int, loss_total_test_epoch, sequence_length: int, **kwargs_loss: Any) -> Dict[str, float]:
-        intermediate_losses = defaultdict(float)
+    def eval_component(self, component: nn.Module, batch_num_samples: int, loss_total_test_epoch, intermediate_losses, sequence_length: int, **kwargs_loss: Any) -> Dict[str, float]:
+        
 
         steps = 0
         #pbar = tqdm(desc=f"Evaluating {str(component)}", file=sys.stdout)
@@ -299,29 +303,10 @@ class Trainer:
 
             steps += 1
             #pbar.update(1)
-
+#### //  intermediate_losses = {k: v / steps for k, v in intermediate_losses.items()} the division by steps is not needed and the batch num of samples should be changed 
         intermediate_losses = {k: v / steps for k, v in intermediate_losses.items()}
         metrics = {f'{str(component)}/eval/total_loss': loss_total_test_epoch, **intermediate_losses}
-        return metrics, loss_total_test_epoch
-
-    # @torch.no_grad()
-    # def inspect_imagination(self, epoch: int) -> None:
-    #     mode_str = 'imagination'
-    #     batch = self.test_dataset.sample_batch(batch_num_samples=self.episode_manager_imagination.max_num_episodes, sequence_length=1 + self.cfg.training.actor_critic.burn_in, sample_from_start=False)
-    #     outputs = self.agent.actor_critic.imagine(self._to_device(batch), self.agent.tokenizer, self.agent.world_model, horizon=self.cfg.evaluation.actor_critic.horizon, show_pbar=True)
-
-    #     to_log = []
-    #     for i, (o, a, r, d) in enumerate(zip(outputs.observations.cpu(), outputs.actions.cpu(), outputs.rewards.cpu(), outputs.ends.long().cpu())):  # Make everything (N, T, ...) instead of (T, N, ...)
-    #         episode = Episode(o, a, r, d, torch.ones_like(d))
-    #         episode_id = (epoch - 1 - self.cfg.training.actor_critic.start_after_epochs) * outputs.observations.size(0) + i
-    #         self.episode_manager_imagination.save(episode, episode_id, epoch)
-
-    #         metrics_episode = {k: v for k, v in episode.compute_metrics().__dict__.items()}
-    #         metrics_episode['episode_num'] = episode_id
-    #         metrics_episode['action_histogram'] = wandb.Histogram(episode.actions.numpy(), num_bins=self.agent.world_model.act_vocab_size)
-    #         to_log.append({f'{mode_str}/{k}': v for k, v in metrics_episode.items()})
-
-    #     return to_log
+        return metrics, loss_total_test_epoch, intermediate_losses
 
     def _save_checkpoint(self, epoch: int, save_agent_only: bool) -> None:
         torch.save(self.agent.state_dict(), self.ckpt_dir / 'last.pt')
@@ -345,12 +330,12 @@ class Trainer:
 
     def load_checkpoint(self) -> None:
         assert self.ckpt_dir.is_dir()
-        self.start_epoch = torch.load(self.ckpt_dir / 'epoch.pt') + 1
+        #self.start_epoch = torch.load(self.ckpt_dir / 'epoch.pt') + 1
         self.agent.load(self.ckpt_dir / 'last.pt', device=self.device)
         ckpt_opt = torch.load(self.ckpt_dir / 'optimizer.pt', map_location=self.device)
         self.optimizer_tokenizer.load_state_dict(ckpt_opt['optimizer_tokenizer'])
         self.optimizer_world_model.load_state_dict(ckpt_opt['optimizer_world_model'])
-        self.train_dataset.load_disk_checkpoint(self.ckpt_dir / 'dataset')
+        #self.train_dataset.load_disk_checkpoint(self.ckpt_dir / 'dataset')
         if self.cfg.evaluation.should:
             self.test_dataset.num_seen_episodes = torch.load(self.ckpt_dir / 'num_seen_episodes_test_dataset.pt')
         print(f'Successfully loaded model, optimizer and {len(self.train_dataset)} episodes from {self.ckpt_dir.absolute()}.')
