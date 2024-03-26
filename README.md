@@ -1,17 +1,18 @@
 
 # PID-GAN
 
-## Launch a training run
+how to train the model
 
-```bash
-python src/main.py 
-```
+run the command: python src/main.py 
 
 By default, the logs are synced to [weights & biases](https://wandb.ai), set `wandb.mode=disabled` to turn it off.
 
-## Configuration
+The physical parameters are loaded by collector.py and calculate the corresponding equation in Phy.py.
 
-- All configuration files are located in `config/`, the main configuration file is `config/trainer.yaml`.
+
+
+## Configuration
+- All model parameters can be changed in the folder config. 
+- All training parameters of the models can be changed in `config/trainer.yaml`.
 - The simplest way to customize the configuration is to edit these files directly.
-- Please refer to [Hydra](https://github.com/facebookresearch/hydra) for more details regarding configuration management.
 
