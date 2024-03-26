@@ -4,34 +4,35 @@ import torch
 from torch.distributions.categorical import Categorical
 import torch.nn as nn
 
-# from models.actor_critic import ActorCritic
 from models.tokenizer import Tokenizer
 from models.world_model import WorldModel
 from utils import extract_state_dict
+from models.tokenizer import NLayerDiscriminator
 
 
 class Agent(nn.Module):
-    def __init__(self, tokenizer: Tokenizer, world_model: WorldModel):
+    def __init__(self, tokenizer: Tokenizer, world_model: WorldModel,discriminator: NLayerDiscriminator,discriminator_AENN):
         super().__init__()
         self.tokenizer = tokenizer
         self.world_model = world_model
-        # self.actor_critic = actor_critic
+        self.discriminator = discriminator
+        self.discriminator_AENN = world_model.head_discriminator
 
-    #@property
-    # def device(self):
-    #     return self.actor_critic.conv1.weight.device
-
-    def load(self, path_to_checkpoint: Path, device: torch.device, load_tokenizer: bool = True, load_world_model: bool = True) -> None: 
+    def load(self, path_to_checkpoint: Path, path_to_checkpoint_trans: Path, device: torch.device, load_tokenizer: bool = True, load_world_model: bool = True,load_discriminator: bool = True, load_discriminator_AENN: bool = True,) -> None: 
         agent_state_dict = torch.load(path_to_checkpoint, device)
+        if path_to_checkpoint_trans is not None:
+            agent_state_dict_trans = torch.load(str(path_to_checkpoint_trans), map_location=device)
+            #print("Transformer checkpoint keys:", agent_state_dict_trans.keys())
         if load_tokenizer:
             self.tokenizer.load_state_dict(extract_state_dict(agent_state_dict, 'tokenizer'))
+            print("Loading the tokenizer successfully")
         if load_world_model:
-            self.world_model.load_state_dict(extract_state_dict(agent_state_dict, 'world_model'))
-        # if load_actor_critic:
-        #     self.actor_critic.load_state_dict(extract_state_dict(agent_state_dict, 'actor_critic'))
+            self.world_model.load_state_dict(extract_state_dict(agent_state_dict_trans, 'world_model'))
+            print("Loading the world_model successfully")
+        if load_discriminator:
+           self.discriminator.load_state_dict(extract_state_dict(agent_state_dict, 'discriminator'))
+           print("Loading the discriminator successfully")
+        if load_discriminator_AENN:
+           self.discriminator_AENN.load_state_dict(extract_state_dict(agent_state_dict_trans, 'discriminator_AENN'))
+           print("Loading the AENN_discriminator successfully")
 
-    # def act(self, obs: torch.FloatTensor, should_sample: bool = True, temperature: float = 1.0) -> torch.LongTensor:
-    #     input_ac = obs if self.actor_critic.use_original_obs else torch.clamp(self.tokenizer.encode_decode(obs, should_preprocess=True, should_postprocess=True), 0, 1)
-    #     logits_actions = self.actor_critic(input_ac).logits_actions[:, -1] / temperature
-    #     act_token = Categorical(logits=logits_actions).sample() if should_sample else logits_actions.argmax(dim=-1)
-    #     return act_token

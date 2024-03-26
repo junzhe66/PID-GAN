@@ -44,17 +44,30 @@ class Transformer(nn.Module):
     def generate_empty_keys_values(self, n: int, max_tokens: int) -> KeysValues:
         device = self.ln_f.weight.device  # Assumption that all submodules are on the same device
         return KeysValues(n, self.config.num_heads, max_tokens, self.config.embed_dim, self.config.num_layers, device)
-
+    
+    #####################################################################
     def forward(self, sequences: torch.Tensor, past_keys_values: Optional[KeysValues] = None) -> torch.Tensor:
         assert past_keys_values is None or len(past_keys_values) == len(self.blocks)
         x = self.drop(sequences)
+
         for i, block in enumerate(self.blocks):
-            x = block(x, None if past_keys_values is None else past_keys_values[i])
+            x = block(x, past_keys_values= None)
 
         x = self.ln_f(x)
         return x
+    
 
+    def forward_with_past(self, sequences: torch.Tensor, past_keys_values= None) -> torch.Tensor:
+        x = self.drop(sequences)
+        presents=[]
+        for i, block in enumerate(self.blocks):
+            x, present = block(x, past_keys_values= None if past_keys_values is None else past_keys_values[i], return_present=True)
+            presents.append(present)
 
+        x = self.ln_f(x)
+        return x, torch.stack(presents)
+
+###########################################################################
 class Block(nn.Module):
     def __init__(self, config: TransformerConfig) -> None:
         super().__init__()
@@ -68,12 +81,18 @@ class Block(nn.Module):
             nn.Dropout(config.resid_pdrop),
         )
 
-    def forward(self, x: torch.Tensor, past_keys_values: Optional[KeysValues] = None) -> torch.Tensor:
-        x_attn = self.attn(self.ln1(x), past_keys_values)
+    def forward(self, x: torch.Tensor, return_present= False, past_keys_values= None) -> torch.Tensor:
+        if return_present: assert not self.training
+
+        x_attn, present= self.attn(self.ln1(x), past_keys_values= past_keys_values)
+            
         x = x + x_attn
         x = x + self.mlp(self.ln2(x))
-        return x
 
+        if past_keys_values is not None or return_present:
+            return x, present
+        return x
+############################################################################
 
 class SelfAttention(nn.Module):
     def __init__(self, config: TransformerConfig) -> None:
@@ -92,29 +111,38 @@ class SelfAttention(nn.Module):
         block_causal_mask = torch.max(causal_mask, torch.block_diag(*[torch.ones(config.tokens_per_block, config.tokens_per_block) for _ in range(config.max_blocks)]))
         self.register_buffer('mask', causal_mask if config.attention == 'causal' else block_causal_mask)
 
-    def forward(self, x: torch.Tensor, kv_cache: Optional[KVCache] = None) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, past_keys_values= None) -> torch.Tensor:
         B, T, C = x.size()
-        if kv_cache is not None:
-            b, nh, L, c = kv_cache.shape
-            assert nh == self.num_heads and b == B and c * nh == C
-        else:
-            L = 0
 
         q = self.query(x).view(B, T, self.num_heads, C // self.num_heads).transpose(1, 2)   # (B, nh, T, hs)
         k = self.key(x).view(B, T, self.num_heads, C // self.num_heads).transpose(1, 2)     # (B, nh, T, hs)
         v = self.value(x).view(B, T, self.num_heads, C // self.num_heads).transpose(1, 2)   # (B, nh, T, hs)
 
-        if kv_cache is not None:
-            kv_cache.update(k, v)
-            k, v = kv_cache.get()
+        present=torch.stack((k,v))
 
+
+        if past_keys_values is not None:
+            past_key, past_value = past_keys_values
+            print("Shape of past_key:", past_key.shape)
+            print("Shape of past_value:", past_value.shape)
+            k = torch.cat((past_key, k), dim=-2)
+            v = torch.cat((past_value, v), dim=-2)
+            print("Shape of k after concatenation:", k.shape)
+            print("Shape of v after concatenation:", v.shape)
+
+
+        # causal self-attention; Self-attend: (B, nh, T, hs) x (B, nh, hs, T) -> (B, nh, T, T)
         att = (q @ k.transpose(-2, -1)) * (1.0 / math.sqrt(k.size(-1)))
-        att = att.masked_fill(self.mask[L:L + T, :L + T] == 0, float('-inf'))
+
+        if past_keys_values is None:
+            att = att.masked_fill(self.mask[:T,:T] == 0, float('-inf')) 
+            print("Masking")
+        # att = att.masked_fill(self.mask[L:L + T, :L + T] == 0, float('-inf'))
+
         att = F.softmax(att, dim=-1)
         att = self.attn_drop(att)
-        y = att @ v
+        y = att @ v # (B, nh, T, T) x (B, nh, T, hs) -> (B, nh, T, hs)
         y = rearrange(y, 'b h t e -> b t (h e)')
 
         y = self.resid_drop(self.proj(y))
-
-        return y
+        return y, present

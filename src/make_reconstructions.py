@@ -12,16 +12,14 @@ from pysteps.visualization import plot_precip_field
 
 @torch.no_grad()
 def make_reconstructions_from_batch(batch, save_dir, epoch, tokenizer):
-    #check_batch(batch)
-
-    original_frames = rearrange(batch['observations'], 'c t b h w  -> (b t) c h w')
-    batch_tokenizer = batch['observations']
+    original_frames = rearrange(batch, 'b t c h w  -> (b t) c h w')
+    batch_tokenizer = batch
 
     rec_frames = generate_reconstructions_with_tokenizer(batch_tokenizer, tokenizer)
     
     os.makedirs(save_dir, exist_ok=True)
 
-    for i in range(5):
+    for i in range(9):
         original_frame = original_frames[i,0,:,:]
         a_display = tensor_to_np_frames(original_frame)
         rec_frame = rec_frames[i,0,:,:]
@@ -45,36 +43,67 @@ def make_reconstructions_from_batch(batch, save_dir, epoch, tokenizer):
 
 
     return
-
-
-# def check_batch(batch):
-    assert sorted(batch.keys()) == ['actions', 'ends', 'mask_padding', 'observations', 'rewards']
-    b, t, _, _, _ = batch['observations'].shape  # (B, T, C, H, W)
-    assert batch['actions'].shape == batch['rewards'].shape == batch['ends'].shape == batch['mask_padding'].shape == (b, t)
-
-
 def tensor_to_np_frames(inputs):
-    #check_float_btw_0_1(inputs)
     return inputs.cpu().numpy()*40
-
-# 
-# def check_float_btw_0_1(inputs):
-    # assert inputs.is_floating_point() and (inputs >= 0).all() and (inputs <= 1).all()
-
-
 @torch.no_grad()
+
 def generate_reconstructions_with_tokenizer(batch, tokenizer):
     #check_batch(batch)
-    inputs = rearrange(batch, 'c t b h w  -> (b t) c h w')
+    inputs = rearrange(batch, 'b t c h w  -> (b t) c h w') 
     outputs = reconstruct_through_tokenizer(inputs, tokenizer)
-    b, t, _, _, _ = batch.size()
-    # outputs = rearrange(outputs, '(b t) c h w -> b t h w c', b=b, t=t)
     rec_frames = outputs
     return rec_frames
 
-
 @torch.no_grad()
 def reconstruct_through_tokenizer(inputs, tokenizer):
-    #check_float_btw_0_1(inputs)
     reconstructions = tokenizer.encode_decode(inputs, should_preprocess=True, should_postprocess=True)
     return torch.clamp(reconstructions, 0, 1)
+
+def compute_metrics (batch, rec_frames):
+    input_images = rearrange(batch, 'b t c h w  -> (b t) c h w')
+    input_images = input_images.squeeze(1)                                  
+    reconstruction = rec_frames.squeeze(1) 
+
+    total_images = input_images.shape[0]
+                                     
+    avg_metrics = {
+        'MSE:': 0, 'MAE:': 0, 'PCC:': 0, 'CSI(1mm):': 0, 'CSI(2mm):': 0, 
+        'CSI(8mm):': 0, 'ACC(1mm):': 0, 'ACC(2mm):': 0, 'ACC(8mm):': 0, 
+        'FSS(1km):': 0, 'FSS(10km):': 0, 'FSS(20km):': 0, 'FSS(30km):': 0
+    }
+
+    
+    
+    for i in range(total_images):
+        input_images_npy = tensor_to_np_frames(input_images[i])
+        reconstruction_npy = tensor_to_np_frames(reconstruction[i])
+        scores_cat1 = det_cat_fct(reconstruction_npy, input_images_npy, 1)
+        scores_cat2 = det_cat_fct(reconstruction_npy, input_images_npy, 2)
+        scores_cat8 = det_cat_fct(reconstruction_npy, input_images_npy, 8)
+        scores_cont = det_cont_fct(reconstruction_npy, input_images_npy, scores = ["MSE", "MAE", "corr_p"], thr=0.1)
+        scores_spatial = intensity_scale(reconstruction_npy, input_images_npy, 'FSS', 0.1, [1,10,20,30])
+        
+        metrics = {'MSE:': scores_cont['MSE'],
+                   'MAE:': scores_cont['MAE'], 
+                   'PCC:': scores_cont['corr_p'], 
+                   'CSI(1mm):': scores_cat1['CSI'],
+                   'CSI(2mm):': scores_cat2['CSI'],
+                   'CSI(8mm):': scores_cat8['CSI'],
+                   'ACC(1mm):': scores_cat1['ACC'],
+                   'ACC(2mm):': scores_cat2['ACC'],
+                   'ACC(8mm):': scores_cat8['ACC'],
+                   'FSS(1km):': scores_spatial[0][0],
+                   'FSS(10km):': scores_spatial[1][0],
+                   'FSS(20km):': scores_spatial[2][0],
+                   'FSS(30km):': scores_spatial[3][0]
+        }
+        
+        # Update avg_metrics dictionary
+        for key in avg_metrics:
+            avg_metrics[key] += metrics[key]
+        
+    # Compute average for each metric
+    for key in avg_metrics:
+        avg_metrics[key] = np.around(avg_metrics[key] / total_images, 3)
+    
+    return avg_metrics

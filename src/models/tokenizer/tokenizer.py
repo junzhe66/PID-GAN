@@ -8,11 +8,15 @@ from typing import Any, Tuple
 from einops import rearrange
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
+import functools
+import torch.nn as nn
+from .util import ActNorm
 
-from dataset import Batch
 from .lpips import LPIPS
 from .nets import Encoder, Decoder
 from utils import LossWithIntermediateLosses
+from .discriminator import NLayerDiscriminator
 
 
 @dataclass
@@ -34,6 +38,19 @@ class Tokenizer(nn.Module):
         self.embedding.weight.data.uniform_(-1.0 / vocab_size, 1.0 / vocab_size)
         self.lpips = LPIPS().eval() if with_lpips else None
 
+    def calculate_adaptive_weight(self, nll_loss, g_loss, last_layer=None):
+        if last_layer is not None:
+            nll_grads = torch.autograd.grad(nll_loss, last_layer, retain_graph=True)[0]
+            g_grads = torch.autograd.grad(g_loss, last_layer, retain_graph=True)[0]
+        else:
+            nll_grads = torch.autograd.grad(nll_loss, self.last_layer[0], retain_graph=True)[0]
+            g_grads = torch.autograd.grad(g_loss, self.last_layer[0], retain_graph=True)[0]
+
+        d_weight = torch.norm(nll_grads) / (torch.norm(g_grads) + 1e-4)
+        d_weight = torch.clamp(d_weight, 0.0, 1e4).detach()
+        d_weight = d_weight * 0.75
+        return d_weight
+
     def __repr__(self) -> str:
         return "tokenizer"
 
@@ -42,11 +59,17 @@ class Tokenizer(nn.Module):
         decoder_input = outputs.z + (outputs.z_quantized - outputs.z).detach()
         reconstructions = self.decode(decoder_input, should_postprocess)
         return outputs.z, outputs.z_quantized, reconstructions
+    
+    def get_last_layer(self):
+        layer = self.decoder.conv_out.weight
+        if not layer.requires_grad:
+            layer.requires_grad_(True)
+        return layer
 
-    def compute_loss(self, batch: Batch, **kwargs: Any) -> LossWithIntermediateLosses:
+    def compute_loss(self, batch ,discriminator: NLayerDiscriminator, **kwargs: Any) -> LossWithIntermediateLosses:
         assert self.lpips is not None
 
-        observations = self.preprocess_input(rearrange(batch, 'c t b h w  -> (b t) c h w'))
+        observations = self.preprocess_input(rearrange(batch, 'b t c h w  -> (b t) c h w'))
         z, z_quantized, reconstructions = self(observations, should_preprocess=False, should_postprocess=False)
 
         # Codebook loss. Notes:
@@ -58,7 +81,25 @@ class Tokenizer(nn.Module):
         reconstruction_loss = torch.abs(observations - reconstructions).mean()
         perceptual_loss = torch.mean(self.lpips(observations, reconstructions))
 
-        return LossWithIntermediateLosses(commitment_loss=commitment_loss, reconstruction_loss=reconstruction_loss, perceptual_loss=perceptual_loss)
+
+        if self.training:
+            #nll_loss=reconstruction_loss
+            nll_loss=reconstruction_loss+perceptual_loss
+            nll_loss = torch.mean(nll_loss)
+            
+            logits_fake = discriminator.forward(reconstructions.contiguous())
+            g_loss = -torch.log(torch.sigmoid(logits_fake)).mean()
+            print(g_loss)
+
+            d_weight = self.calculate_adaptive_weight(nll_loss, g_loss, last_layer=self.get_last_layer())
+            #print("weight",d_weight)
+            gd_loss=d_weight*g_loss
+        else:
+            gd_loss=0.0
+        
+
+
+        return LossWithIntermediateLosses(commitment_loss=commitment_loss, reconstruction_loss=reconstruction_loss, perceptual_loss=perceptual_loss,gd_loss=gd_loss)
 
     def encode(self, x: torch.Tensor, should_preprocess: bool = False) -> TokenizerEncoderOutput:
         if should_preprocess:
@@ -103,3 +144,4 @@ class Tokenizer(nn.Module):
     def postprocess_output(self, y: torch.Tensor) -> torch.Tensor:
         """y is supposed to be channels first and in [-1, 1]"""
         return y.add(1).div(2)
+
