@@ -2,7 +2,7 @@
 # PID-GAN
 
 PID-GAN leverages advanced generative adversarial network principles, incorporating physically informed design to optimize performance and realism in generated outputs. This README guide outlines how to initiate training runs and configure the model to fit specific requirements.
-
+Related project report: https://repository.tudelft.nl/islandora/object/uuid%3A4fe7cd89-5f7c-468b-8f8b-d2c493be9386
 ## Launch a Training Run
 
 Initiate the model training process by executing the following command:
