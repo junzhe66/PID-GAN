@@ -130,3 +130,4 @@ Pretrained models are available [here](https://github.com/eloialonso/iris_pretra
 - [https://github.com/CompVis/taming-transformers](https://github.com/CompVis/taming-transformers)
 - [https://github.com/karpathy/minGPT](https://github.com/karpathy/minGPT)
 - [https://github.com/google-research/rliable](https://github.com/google-research/rliable)
+# PID-GAN
