@@ -10,10 +10,6 @@ PID-GAN is a specialized Generative Adversarial Network designed to enhance the 
 - [Usage](#usage)
 - [Training the Model](#training-the-model)
 - [Modifying Physical Parameters](#modifying-physical-parameters)
-- [Contributing](#contributing)
-- [License](#license)
-- [Citations](#citations)
-- [Contact](#contact)
 
 ## Installation
 
@@ -43,19 +39,24 @@ To set up the PID-GAN model on your system, follow these steps:
    ```bash
    set wandb.mode=disabled
    ```
-
 ## Configuration
+Configuration of PID-GAN is managed through YAML files located in the config/ directory. The config/trainer.yaml serves as the primary configuration file. Modifications here can adjust settings like learning rates, batch sizes, and other model parameters.
 
-Initiate the model training process by executing the following command:
+For dynamic parameter adjustments and advanced configuration options, PID-GAN utilizes Hydra. Comprehensive guidance on configuration management can be found in the Hydra documentation.
 
-python src/main.py
-Logs and training metrics are automatically synchronized with Weights & Biases. To disable this feature, set wandb.mode=disabled.
-
-## Configuration
-The configuration of PID-GAN is managed through YAML files located in the config/ directory, with config/trainer.yaml serves as the primary configuration file. Direct modifications to these files are the simplest method to adjust settings such as learning rates, batch sizes, and other model parameters.
-
-For advanced configuration options and dynamic parameter adjustments, PID-GAN utilizes Hydra. Refer to the Hydra documentation for comprehensive guidance on configuration management.
-
+## Training
+Launch the model training using the command specified in Getting Started. Monitor training progress through the command line or via Weights & Biases integration.
 
 ## Adjusting Physical Parameters
-Physical parameters and equations are defined in collector.py and Phy.py. Modify these files to change the physical constraints or equations the model adheres to during training.
+
+Physical parameters and equations are defined in `collector.py` and `Phy.py`. Modify these files to change the physical constraints or equations the model adheres to during training. The model's accuracy and realism in rainfall nowcasting rely significantly on the quality and characteristics of the input data.
+
+For real-world application and enhancement of the model's performance, we utilize the "Archived 5-min rainfall accumulations from a radar dataset for the Netherlands". This dataset provides high-resolution rainfall data, which is crucial for refining and testing our model's predictive capabilities under various meteorological conditions.
+
+Dataset available here: [Archived 5-min rainfall accumulations for the Netherlands](https://data.4tu.nl/articles/dataset/Archived_5-min_rainfall_accumulations_from_a_radar_dataset_for_the_Netherlands/12675278)
+
+Ensure that any adjustments to physical parameters or datasets are tested thoroughly to maintain the integrity and accuracy of the model outputs.
+
+
+
+
