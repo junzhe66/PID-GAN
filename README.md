@@ -26,6 +26,7 @@ To set up the PID-GAN model on your system, follow these steps:
 
 2. **Navigate to the Project Directory:**
    Change into the project directory using:
+   ```bash
    cd PID-GAN
 
    
