@@ -23,6 +23,14 @@ To set up the PID-GAN model on your system, follow these steps:
    Use Git to clone the repository to your local machine. Open your terminal and run the following command:
    ```bash
    git clone https://github.com/junzhe66/PID-GAN.git
+
+2. **Navigate to the Project Directory:**
+   Change into the project directory using:
+   cd PID-GAN
+
+   
+
+
 ## Launch a Training Run
 
 Initiate the model training process by executing the following command:
