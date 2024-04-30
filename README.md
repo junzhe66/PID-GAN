@@ -29,16 +29,16 @@ To set up the PID-GAN model on your system, follow these steps:
    ```bash
    cd PID-GAN
 
-3. **Install Required Dependencies::**
+3. **Install Required Dependencies:**
    Install all necessary Python libraries from the requirements.txt file. Ensure you have Python and pip installed on your machine, then run:
       ```bash
    pip install -r requirements.txt
 
 ## Getting Started
-To initiate a training run of the PID-GAN model, use the following command:
+**To initiate a training run of the PID-GAN model, use the following command:**
    ```bash
    python src/main.py
-Logs and training metrics are synchronized with Weights & Biases by default. To disable this feature:
+**Logs and training metrics are synchronized with Weights & Biases by default. To disable this feature:**
       ```bash
    set wandb.mode=disabled
 
