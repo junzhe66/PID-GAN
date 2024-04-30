@@ -16,13 +16,13 @@ PID-GAN is a specialized Generative Adversarial Network designed to enhance the 
 - [Contact](#contact)
 
 ## Installation
-Instructions for installing the PID-GAN model and any required libraries or dependencies.
 
-git clone https://github.com/junzhe66/PID-GAN.git
-cd PID-GAN
-pip install -r requirements.txt
+To set up the PID-GAN model on your system, follow these steps:
 
-##
+1. **Clone the Repository:**
+   Use Git to clone the repository to your local machine. Open your terminal and run the following command:
+   ```bash
+   git clone https://github.com/junzhe66/PID-GAN.git
 ## Launch a Training Run
 
 Initiate the model training process by executing the following command:
