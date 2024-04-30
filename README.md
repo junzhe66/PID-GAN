@@ -1,7 +1,21 @@
+# PID-GAN: Physics-Informed Discriminator Generative Adversarial Network for Nowcasting Extreme Rainfall
 
-# PID-GAN
+## Overview
+PID-GAN is a specialized Generative Adversarial Network designed to enhance the accuracy and realism of rainfall nowcasting predictions. This model incorporates physical laws into the adversarial training process, enabling it to generate outputs that closely mirror real-world meteorological conditions. The README offers detailed instructions for setting up, configuring, and training the PID-GAN model, making it an invaluable tool for improving short-term rainfall prediction and related meteorological applications.
 
-PID-GAN leverages advanced generative adversarial network principles, incorporating physically informed design to optimize performance and realism in generated outputs. This README guide outlines how to initiate training runs and configure the model to fit specific requirements.
+## Table of Contents
+- [Installation](#installation)
+- [Getting Started](#getting-started)
+- [Configuration](#configuration)
+- [Usage](#usage)
+- [Training the Model](#training-the-model)
+- [Modifying Physical Parameters](#modifying-physical-parameters)
+- [Contributing](#contributing)
+- [License](#license)
+- [Citations](#citations)
+- [Contact](#contact)
+
+
 ## Launch a Training Run
 
 Initiate the model training process by executing the following command:
