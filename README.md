@@ -42,7 +42,7 @@ Logs and training metrics are synchronized with Weights & Biases by default. To 
       ```bash
    set wandb.mode=disabled
 
-## Launch a Training Run
+## Configuration
 
 Initiate the model training process by executing the following command:
 
