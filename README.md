@@ -26,9 +26,7 @@ To set up the PID-GAN model on your system, follow these steps:
    cd PID-GAN
 
 3. **Install Required Dependencies:**
-   Install all necessary Python libraries from the requirements.txt file. Ensure you have Python and pip installed on your machine, then run:
-      ```bash
-   pip install -r requirements.txt
+    Install all necessary Python libraries listed in the all_packages.txt file. Ensure you have Python and pip installed on your machine
 
 ## Getting Started
    **To initiate a training run of the PID-GAN model, use the following command:**
