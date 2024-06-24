@@ -58,5 +58,75 @@ The analysis of the physical data to perform the cubic interpolation and kriging
 You can change the path of where you want to save the generated dataset in the function `save_temp_to_hdf5`. The radar dataset selection and analysis can be found in this repository: [Nowcasting of Extreme Precipitation](https://github.com/bbbbihr/Nowcasting-of-extreme-precipitation).
 
 ## DataLoader
+The Collector class is designed to load radar and physical datasets from specific directories. Below are the steps to set up the file paths and directories correctly.
+
+1. Data Directories and File Paths
+
+Physical Data
+- Root Directories: These are the root directories where the physical data is stored (folder: phy_data).
+  - Evapotranspiration maps: phy_data/evapotranspiration maps
+  - Specific Humidity maps: phy_data/Specific Humidity maps
+  - U100: phy_data/U100
+  - V100: phy_data/V100
+  - Wind_u: phy_data/Wind_u
+  - Wind_v: phy_data/Wind_v
+  - Dew Temperature maps: phy_data/Dew Temperature maps
+
+- File Names: These are the base file names for each dataset.
+  - Evapotranspiration: evapot_kriging_
+  - Humidity: humidity_kriging_
+  - U100: Wind_U100_kriging_
+  - V100: Wind_V100_kriging_
+  - Wind_u: Wind_U_kriging_
+  - Wind_v: Wind_V_kriging_
+  - Dew Temperature: temp_kriging_
+
+- Dataset Names: These are the dataset names within each HDF5 file.
+  - Evapotranspiration: eva
+  - Humidity: humidity
+  - U100: u100
+  - V100: v100
+  - Wind_u: Wind_U
+  - Wind_v: Wind_V
+  - Dew Temperature: DW_temp
+
+Radar Data
+- Root Directory: This is the root directory where the radar data is stored.
+  - RAD_NL25_RAP_5min/
+
+2. CSV Files for Event Times
+- These CSV files contain the event times for training, testing, and validation datasets. They can be found in the `Dataset` folder.
+  - Training (Delfland): Dataset/training_Delfland08-14.csv
+  - Training (Aa): Dataset/training_Aa08-14.csv
+  - Training (Dwar): Dataset/training_Dwar08-14.csv
+  - Training (Regge): Dataset/training_Regge08-14.csv
+  - Testing: Dataset/testing_Delfland18-20.csv
+  - Validation: Dataset/validation_Delfland15-17.csv
+
+- Extreme Event Times
+  - Training: Dataset/training_Delfland08-14_ext.csv
+  - Testing: Dataset/testing_Delfland18-20_ext.csv
+  - Validation: Dataset/validation_Delfland15-17_ext.csv
+
+3. Instructions for Modifying Paths
+- Ensure that the paths in the Collector class match the locations of your data. Modify the paths in the collect_data method and any other relevant locations.
+
+4. Loading Data
+- The collect_data method loads and combines the radar and physical datasets. It returns data loaders for training, testing, and extreme event testing.
+- Use the collect_training_data, collect_testing_data, collect_ext_testing_data, and collect_ext_data methods to get the respective data loaders.
+
+5. Example Usage
+- Here is an example of how to use the Collector class:
+  collector = Collector()
+  train_loader = collector.collect_training_data(batch_size=32)
+  test_loader = collector.collect_testing_data(batch_size=32)
+
+6. Implementation Notes
+- The radarDataset class handles the loading and preprocessing of radar data.
+- The phyDataset class handles the loading and preprocessing of physical data.
+- The CustomDataset class is a helper for loading combined data from a .npy file.
+
+
+
 
 
