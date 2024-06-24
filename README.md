@@ -53,6 +53,8 @@ For real-world application and enhancement of the model's performance, we utiliz
 2. **ERA5 dataset**: [ERA5 Reanalysis Dataset](https://cds.climate.copernicus.eu/cdsapp#!/dataset/reanalysis-era5-pressure-levels?tab=overview)
 3. **AWS dataset**: [KNMI Hourly Data](https://www.daggegevens.knmi.nl/klimatologie/uurgegevens)
 
-The analysis of the physical data to perform the cubic interpolation and kriging interpolation can be found in the `PHY` folder. The radar dataset selection and analysis can be found in this repository: [Nowcasting of Extreme Precipitation](https://github.com/bbbbihr/Nowcasting-of-extreme-precipitation).
+The analysis of the physical data to perform the cubic interpolation and kriging interpolation, as well as how to generate the interpolated dataset, can be found in the files of the `PHY` folder. 
+
+You can change the path of where you want to save the generated dataset in the function `save_temp_to_hdf5`. The radar dataset selection and analysis can be found in this repository: [Nowcasting of Extreme Precipitation](https://github.com/bbbbihr/Nowcasting-of-extreme-precipitation).
 
 
