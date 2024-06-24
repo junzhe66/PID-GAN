@@ -45,15 +45,14 @@ Launch the model training using the command specified in Getting Started. Monito
 
 ## Dataset
 
-Physical parameters and equations are defined in 'collector.py' and 'Phy.py'. Modify these files to change the physical constraints or equations the model adheres to during training. Specifically, the calculation of Equation 9 from the paper is implemented in Phy.py. The model's accuracy and realism in rainfall nowcasting rely significantly on the quality and characteristics of the input data.
+Physical parameters and equations are defined in `collector.py` and `Phy.py`. Modify these files to change the physical constraints or equations the model adheres to during training. Specifically, the calculation of Equation 9 from the paper is implemented in `Phy.py`. The model's accuracy and realism in rainfall nowcasting rely significantly on the quality and characteristics of the input data.
 
 For real-world application and enhancement of the model's performance, we utilize the "Archived 5-min rainfall accumulations from a radar dataset for the Netherlands". This dataset provides high-resolution rainfall data, which is crucial for refining and testing our model's predictive capabilities under various meteorological conditions.
 
-Dataset available here: Archived 5-min rainfall accumulations for the Netherlands. (https://data.4tu.nl/articles/dataset/Archived_5-min_rainfall_accumulations_from_a_radar_dataset_for_the_Netherlands/12675278)
-ERA5 dataset: ERA5 Reanalysis Dataset. (https://cds.climate.copernicus.eu/cdsapp#!/dataset/reanalysis-era5-pressure-levels?tab=overview)
-AWS dataset: KNMI Hourly Data. (https://www.daggegevens.knmi.nl/klimatologie/uurgegevens)
-The analysis of the physical data to perform the cubic interpolation and kriging interpolation can be found in the 'PHY' folder. The radar dataset selection and analysis can be found in this repository: (https://github.com/bbbbihr/Nowcasting-of-extreme-precipitation). 
+1. **Dataset available here**: [Archived 5-min rainfall accumulations for the Netherlands](https://data.4tu.nl/articles/dataset/Archived_5-min_rainfall_accumulations_from_a_radar_dataset_for_the_Netherlands/12675278)
+2. **ERA5 dataset**: [ERA5 Reanalysis Dataset](https://cds.climate.copernicus.eu/cdsapp#!/dataset/reanalysis-era5-pressure-levels?tab=overview)
+3. **AWS dataset**: [KNMI Hourly Data](https://www.daggegevens.knmi.nl/klimatologie/uurgegevens)
 
-
+The analysis of the physical data to perform the cubic interpolation and kriging interpolation can be found in the `PHY` folder. The radar dataset selection and analysis can be found in this repository: [Nowcasting of Extreme Precipitation](https://github.com/bbbbihr/Nowcasting-of-extreme-precipitation).
 
 
