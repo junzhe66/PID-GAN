@@ -38,9 +38,7 @@ To set up the PID-GAN model on your system, follow these steps:
    set wandb.mode=disabled
    ```
 ## Configuration
-Configuration of PID-GAN is managed through YAML files located in the config/ directory. The config/trainer.yaml serves as the primary configuration file. Modifications here can adjust settings like learning rates, batch sizes, and other model parameters.
-
-For dynamic parameter adjustments and advanced configuration options, PID-GAN utilizes Hydra. Comprehensive guidance on configuration management can be found in the Hydra documentation.
+Configuration of VQ-GAN can be modified through YAML files located in the 'config/' directory. The 'config/tokenizer/default.yaml' file allows you to adjust settings specific to the tokenizer. For the transformer configuration, modifications can be made in the 'config/world_model/default.yaml' file. The 'config/trainer.yaml' file manages the training configuration for the entire model, including settings like learning rates and batch sizes.
 
 ## Training
 Launch the model training using the command specified in Getting Started. Monitor training progress through the command line or via Weights & Biases integration.
